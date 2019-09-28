@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Fractals</title>
+
+  <style>
+    #app {
+      display: flex;
+      flex-direction: column
+    }
+
+    .controls {
+      margin-bottom: 8px;
+    }
+
+    .controls .controls__btns {
+      margin-top: 8px;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="controls">
+      Deep: 
+      <input type="number" v-model="deep" placeholder="Deep">
+      <br>
+
+      <div class="controls__btns">
+        <button @click="drawSnowflake">Draw Koch snowflake</button>
+        <button @click="drawHeighwayDragon">Draw Heighway dragon</button>
+        <button @click="drawSerpinskiTriangle">Draw Serpinski triangle</button>
+        <button @click="drawTree">Draw a tree</button>
+      </div>
+    </div>
+
+    <canvas id="canvas" style="background-color: black; width: 600px; height: 600px;"></canvas>
+  </div>
+
+  <script>
+    let app = new Vue({
+      el: '#app',
+      data: {
+        deep: 4,
+        kochSnowflake: {
+          S: 'F++F++F',
+          rules: {
+            F: 'F-F++F-F'
+          },
+          alpha: 60
+        },
+        heighwayDragon: {
+          S: 'FX',
+          rules: {
+            F: 'F',
+            X: 'X+YF+',
+            Y: '-FX-Y'
+          },
+          alpha: 90
+        },
+        serpinskiTriangle: {
+          S: 'FXF--FF--FF',
+          rules: {
+            F: 'FF',
+            X: '--FXF++FXF++FXF--'
+          },
+          alpha: 60
+        },
+        tree: {
+          S: 'F',
+          rules: {
+            F: 'F[+F]F[-F]F'
+          },
+          alpha: 25.7
+        },
+        grammar: {
+          'F': (ctx, config) => {
+            config.current.x += config.current.length * Math.cos(config.alpha * config.current.rad * Math.PI / 180);
+            config.current.y += config.current.length * Math.sin(config.alpha * config.current.rad * Math.PI / 180);
+
+            ctx.lineTo(config.current.x, config.current.y);
+          },
+          '+': (ctx, config) => {
+            config.current.rad += 1;
+          },
+          '-': (ctx, config) => {
+            config.current.rad -= 1;
+          },
+          '[': (ctx, config) => {
+            config.remember.x = config.current.x;
+            config.remember.y = config.current.y;
+            config.remember.rad = config.current.rad;
+          },
+          ']': (ctx, config) => {
+            config.current.x = config.remember.x;
+            config.current.y = config.remember.y;
+            config.current.rad = config.remember.rad;
+
+            ctx.moveTo(config.current.x, config.current.y);
+          }
+        },
+        current: {
+          x: 500,
+          y: 200,
+          rad: 2,
+          length: 5
+        },
+        remember: {}
+      },
+      methods: {
+        getBuildRule(config, deep) {
+          let S = config.S;
+
+          for (let i = 0; i < deep; i++) {
+            S = S.split('').map(char => {
+              if (!config.rules[char]) {
+                return char;
+              }
+
+              return config.rules[char];
+            }).join('');
+          }
+
+          return S;
+        },
+
+        drawFractal(rule, alpha) {
+          let c = document.getElementById('canvas');
+          c.width = 600;
+          c.height = 600;
+
+          let ctx = c.getContext('2d');
+
+          ctx.clearRect(0, 0, c.width, c.height);
+
+          ctx.beginPath();
+          ctx.moveTo(this.current.x, this.current.y);
+
+          for (let letter of rule.split('')) {
+            let f = this.grammar[letter];
+            if (f) {
+              f(ctx, {
+                current: this.current,
+                remember: this.remember,
+                alpha
+              });
+            }
+          }
+
+          ctx.strokeStyle = "yellow";
+          ctx.stroke();
+        },
+
+        drawSnowflake() {
+          this.current = {
+            x: 500,
+            y: 200,
+            rad: 2,
+            length: 5
+          };
+
+          let rule = this.getBuildRule(this.kochSnowflake, this.deep);
+          this.drawFractal(rule, this.kochSnowflake.alpha);
+        },
+
+        drawHeighwayDragon() {
+          this.current = {
+            x: 400,
+            y: 300,
+            rad: 2,
+            length: 5
+          };
+
+          let rule = this.getBuildRule(this.heighwayDragon, this.deep);
+          this.drawFractal(rule, this.heighwayDragon.alpha);
+        },
+
+        drawSerpinskiTriangle() {
+          this.current = {
+            x: 300,
+            y: 200,
+            rad: 2,
+            length: 5
+          };
+
+          let rule = this.getBuildRule(this.serpinskiTriangle, this.deep);
+          this.drawFractal(rule, this.serpinskiTriangle.alpha);
+        },
+
+        drawTree() {
+          this.current = {
+            x: 100,
+            y: 100,
+            rad: 2,
+            length: 20
+          };
+
+          let rule = this.getBuildRule(this.tree, this.deep);
+          this.drawFractal(rule, this.tree.alpha);
+        },
+      }
+    })
+  </script>
+</body>
+</html>
