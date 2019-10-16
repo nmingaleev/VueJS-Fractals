@@ -91,14 +91,18 @@
             config.current.rad -= 1;
           },
           '[': (ctx, config) => {
-            config.remember.x = config.current.x;
-            config.remember.y = config.current.y;
-            config.remember.rad = config.current.rad;
+            config.remember.push({
+              x: config.current.x,
+              y: config.current.y,
+              rad: config.current.rad
+            });
           },
           ']': (ctx, config) => {
-            config.current.x = config.remember.x;
-            config.current.y = config.remember.y;
-            config.current.rad = config.remember.rad;
+            const cached = config.remember.pop();
+
+            config.current.x = cached.x;
+            config.current.y = cached.y;
+            config.current.rad = cached.rad;
 
             ctx.moveTo(config.current.x, config.current.y);
           }
@@ -109,7 +113,7 @@
           rad: 2,
           length: 5
         },
-        remember: {}
+        remember: []
       },
       methods: {
         getBuildRule(config, deep) {
